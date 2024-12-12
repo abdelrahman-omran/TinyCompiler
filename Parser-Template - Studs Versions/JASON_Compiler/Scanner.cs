@@ -7,20 +7,20 @@ using System.Text.RegularExpressions;
 
 public enum Token_Class
 {
-    Integer, Float, String, StringValue, Read, Write, Repeat, Until,
-    If, Else, ElseIF, Then, Return, EndLine, Constant, Comment, Identifier,
-    PlusOperator, MinusOperator, MultiplyOperator, DivisionOperator, AssignOperator,
-    EqualOpertaor, GreaterThanOpertaor, LessThanOpertaor, Comma, SimiColon,
-    Lparan, Rparan, Lbrace, Rbrace
+    Integer ,Float ,String ,StringValue ,Read ,Write ,Repeat ,Until,
+    If ,Else ,ElseIF ,Then ,Return ,EndLine ,Constant ,Identifier,
+    PlusOperator ,MinusOperator ,MultiplyOperator ,DivisionOperator ,AssignOperator,
+    EqualOpertaor ,GreaterThanOpertaor ,LessThanOpertaor ,Comma ,SimiColon,
+    Lparan ,Rparan ,Lbrace ,Rbrace ,OrOperator ,AndOperator
 }
 namespace JASON_Compiler
 {
-
+    
 
     public class Token
     {
-        public string lex;
-        public Token_Class token_type;
+       public string lex;
+       public Token_Class token_type;
     }
 
     public class Scanner
@@ -59,14 +59,14 @@ namespace JASON_Compiler
             Operators.Add("}", Token_Class.Rparan);
             Operators.Add("(", Token_Class.Lbrace);
             Operators.Add(")", Token_Class.Rbrace);
-            Operators.Add("/**/", Token_Class.Comment);
-
+            Operators.Add("||", Token_Class.OrOperator);
+            Operators.Add("&&", Token_Class.AndOperator);
 
         }
 
-        public void StartScanning(string SourceCode)
+    public void StartScanning(string SourceCode)
         {
-            for (int i = 0; i < SourceCode.Length; i++)
+            for(int i=0; i<SourceCode.Length;i++)
             {
                 int j = i;
                 char CurrentChar = SourceCode[i];
@@ -96,25 +96,87 @@ namespace JASON_Compiler
 
                 else if (CurrentChar >= '0' && CurrentChar <= '9') //if you read a constant
                 {
-                    int dot = 0;
-
-                    while (CurrentChar >= '0' && CurrentChar <= '9' || CurrentChar == '.' && dot < 1)
+                    if (j < SourceCode.Length && SourceCode[j + 1] >= 'A' && SourceCode[j + 1] <= 'z' && SourceCode[j + 1] != '.')
                     {
-                        if (CurrentChar == '.')
-                            dot++;
                         j++;
-
-                        if (j >= SourceCode.Length) break;
-
-                        CurrentChar = SourceCode[j];
-                        if (CurrentChar >= '0' && CurrentChar <= '9' || CurrentChar == '.' && dot < 1)
+                        while (true)
                         {
+                            if(j >= SourceCode.Length || CurrentChar == '\n' || CurrentChar == ' ')
+                            {
+                                break;
+                            }
+                            CurrentChar = SourceCode[j];
                             CurrentLexeme += CurrentChar.ToString();
+                            j++;
                         }
                     }
 
+                    else
+                    {
+                        int dot = 0;
+
+                        while (CurrentChar >= '0' && CurrentChar <= '9' || CurrentChar == '.' && dot < 1)
+                        {
+                            if (CurrentChar == '.')
+                                dot++;
+                            j++;
+
+                            if (j >= SourceCode.Length) break;
+
+                            CurrentChar = SourceCode[j];
+                            if (CurrentChar >= '0' && CurrentChar <= '9' || CurrentChar == '.' && dot < 1)
+                            {
+                                CurrentLexeme += CurrentChar.ToString();
+                            }
+                        }
+                    }
                     i = j - 1;
                     FindTokenClass(CurrentLexeme.ToLower());
+                }
+
+                else if (CurrentChar == '/' && j + 1 < SourceCode.Length && SourceCode[j + 1] == '*') //Comment
+                {
+                    bool isComplete = false;
+                    j++;
+                    CurrentChar = SourceCode[j];
+
+                    CurrentLexeme += CurrentChar.ToString();
+                    j++;
+                    if (j < SourceCode.Length)
+                    {
+                        CurrentChar = SourceCode[j];
+                        CurrentLexeme += CurrentChar.ToString();
+                        while (true)
+                        {
+                            if (j >= SourceCode.Length || j + 1 >= SourceCode.Length || CurrentChar == '\n')
+                            {
+                                break;
+                            }
+                            else if (CurrentChar == '*' && SourceCode[j + 1] == '/')
+                            {
+                                CurrentLexeme += CurrentChar.ToString() + SourceCode[j + 1];
+                                isComplete = true;
+                                break;
+                            }
+                            j++;
+                            if (j < SourceCode.Length)
+                            {
+                                CurrentChar = SourceCode[j];
+                                CurrentLexeme += CurrentChar.ToString();
+                            }
+                        }
+                    }
+
+                    if (isComplete)
+                    {
+                        i = j + 1;
+                    }
+                    else
+                    {
+                        i = j;
+                        FindTokenClass(CurrentLexeme.ToLower());
+                    }
+                    
                 }
 
                 else if (CurrentChar == '+' || CurrentChar == '-' || CurrentChar == '*' || CurrentChar == '/') //Arthmatic operators
@@ -164,42 +226,24 @@ namespace JASON_Compiler
                     FindTokenClass(CurrentLexeme.ToLower());
                 }
 
-                else if (CurrentChar == '/') //Comment
+                else if (CurrentChar == '|' && j + 1 < SourceCode.Length && SourceCode[j + 1] == '|') //OR Operator
                 {
                     j++;
-                    if (j < SourceCode.Length)
-                    {
-                        CurrentChar = SourceCode[j];
-                    }
-                    if (CurrentChar == '*')
-                    {
-                        CurrentLexeme += CurrentChar.ToString();
-                        j++;
-                        if (j < SourceCode.Length)
-                        {
-                            CurrentChar = SourceCode[j];
-                            while (true)
-                            {
-                                if (j >= SourceCode.Length || j + 1 >= SourceCode.Length)
-                                {
-                                    break;
-                                }
-                                else if (CurrentChar == '*' && SourceCode[j + 1] == '/')
-                                {
-                                    CurrentLexeme += CurrentChar.ToString() + SourceCode[j + 1];
-                                    break;
-                                }
-                                j++;
-                                if (j < SourceCode.Length)
-                                {
-                                    CurrentChar = SourceCode[j];
-                                }
-                            }
-                        }
-                    }
+                    CurrentChar = SourceCode[j];
+                    CurrentLexeme += CurrentChar.ToString();
 
                     i = j;
-                    FindTokenClass(CurrentLexeme.ToLower());
+                    FindTokenClass(CurrentLexeme);
+                }
+
+                else if (CurrentChar == '&' && j + 1 < SourceCode.Length && SourceCode[j + 1] == '&') //AND Operator
+                {
+                    j++;
+                    CurrentChar = SourceCode[j];
+                    CurrentLexeme += CurrentChar.ToString();
+
+                    i = j;
+                    FindTokenClass(CurrentLexeme);
                 }
 
                 else if (CurrentChar == '"') //String value
@@ -214,7 +258,7 @@ namespace JASON_Compiler
                         {
                             CurrentLexeme += CurrentChar.ToString();
                             j++;
-                            if (j >= SourceCode.Length)
+                            if (j >= SourceCode.Length || CurrentChar == '\n')
                             {
                                 complete = false;
                                 break;
@@ -225,10 +269,14 @@ namespace JASON_Compiler
                         if (complete)
                         {
                             CurrentLexeme += CurrentChar.ToString();
+                            i = j;
+                        }
+                        else
+                        {
+                            i = j - 1;
                         }
 
                     }
-                    i = j;
                     FindTokenClass(CurrentLexeme.ToLower());
 
                 }
@@ -238,12 +286,12 @@ namespace JASON_Compiler
                     FindTokenClass(CurrentLexeme.ToLower());
                 }
 
-                if (j >= SourceCode.Length)
+                if(j >= SourceCode.Length)
                 {
                     break;
                 }
             }
-
+            
             JASON_Compiler.TokenStream = Tokens;
         }
         void FindTokenClass(string Lex)
@@ -252,33 +300,33 @@ namespace JASON_Compiler
             Token Tok = new Token();
             Tok.lex = Lex;
             //Is it a reserved word?
-            if (isReservedWord(Lex))
+            if(isReservedWord(Lex))
             {
                 Tok.token_type = ReservedWords[Lex];
             }
 
             //Is it an identifier?
-            else if (isIdentifier(Lex))
+            else if(isIdentifier(Lex))
             {
                 Tok.token_type = Token_Class.Identifier;
             }
 
             //Is it a Constant?
-            else if (isConstant(Lex))
+            else if(isConstant(Lex))
             {
                 Tok.token_type = Token_Class.Constant;
             }
 
             //Is it an operator?
-            else if (isOperator(Lex))
+            else if(isOperator(Lex))
             {
                 Tok.token_type = Operators[Lex];
             }
 
             //Is it a string?
-            else if (isStringValue(Lex))
+            else if(isStringValue(Lex))
             {
-                Tok.token_type = Token_Class.StringValue;
+                Tok.token_type= Token_Class.StringValue;
             }
 
             //Is it an undefined?
@@ -288,20 +336,20 @@ namespace JASON_Compiler
                 unDifined = true;
             }
 
-            if (!unDifined)
+            if(!unDifined)
             {
                 Tokens.Add(Tok);
             }
 
         }
 
-
+    
 
         bool isIdentifier(string lex)
         {
-            bool isValid = false;
+            bool isValid=false;
             // Check if the lex is an identifier or not.
-            var rx = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$", RegexOptions.Compiled);
+            var rx = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$",RegexOptions.Compiled);
             if (rx.IsMatch(lex))
             {
                 isValid = true;
@@ -328,7 +376,7 @@ namespace JASON_Compiler
             //Check if the lex is a reserved word like (if,else,..) or not
             for (int i = 0; i < ReservedWords.Count; i++)
             {
-                if (ReservedWords.ContainsKey(lex))
+                if(ReservedWords.ContainsKey(lex))
                 {
                     isValid = true;
                 }
@@ -341,9 +389,9 @@ namespace JASON_Compiler
         {
             bool isValid = false;
             //Check if the lex is an operator like (+,-,*,..) or not
-            for (int i = 0; i < Operators.Count; i++)
+            for(int i = 0; i < Operators.Count; i++)
             {
-                if (Operators.ContainsKey(lex))
+                if(Operators.ContainsKey(lex))
                 {
                     isValid = true;
                 }
