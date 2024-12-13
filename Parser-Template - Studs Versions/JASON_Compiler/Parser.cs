@@ -59,7 +59,7 @@ namespace JASON_Compiler
         {
             Node mainfunc = new Node("Main");
             mainfunc.Children.Add(Datatype());
-            // mainfunc.Children.Add(match(Token_Class.Main));
+            mainfunc.Children.Add(match(Token_Class.Main));
             mainfunc.Children.Add(match(Token_Class.Lbrace));
             mainfunc.Children.Add(match(Token_Class.Rbrace));
             mainfunc.Children.Add(FunctionBody());
@@ -234,7 +234,7 @@ namespace JASON_Compiler
             ifStet.Children.Add(match(Token_Class.If));
             ifStet.Children.Add(Condition());
             ifStet.Children.Add(match(Token_Class.Then));
-            //ifstet.Children.Add(Statements());
+            ifStet.Children.Add(Statements());
             if (InputPointer < TokenStream.Count && TokenStream[InputPointer].token_type == Token_Class.ElseIF)
             {
                 ifStet.Children.Add(ElseifStatment());
@@ -243,10 +243,10 @@ namespace JASON_Compiler
             {
                 ifStet.Children.Add(ElseifStatment());
             }
-        //  //  else if (InputPointer < TokenStream.Count && TokenStream[InputPointer].token_type == Token_Class.End)
-        //    {
-           //     ifStet.Children.Add(match(Token_Class.End));
-         //   }
+            else if (InputPointer < TokenStream.Count && TokenStream[InputPointer].token_type == Token_Class.End)
+            {
+                ifStet.Children.Add(match(Token_Class.End));
+            }
             else
             {
                 Errors.Error_List.Add("Parsing Error: Expected end\r\n");
@@ -262,7 +262,7 @@ namespace JASON_Compiler
             elsif.Children.Add(match(Token_Class.ElseIF));
             elsif.Children.Add(Condition());
             elsif.Children.Add(match(Token_Class.Then));
-            //elsif.Children.Add(Statements());
+            elsif.Children.Add(Statements());
             if (InputPointer < TokenStream.Count && TokenStream[InputPointer].token_type == Token_Class.ElseIF)
             {
                 elsif.Children.Add(ElseifStatment());
@@ -271,10 +271,10 @@ namespace JASON_Compiler
             {
                 elsif.Children.Add(ElseStatment());
             }
-         //   else if (InputPointer < TokenStream.Count && TokenStream[InputPointer].token_type == Token_Class.End)
-      //      {
-          //      elsif.Children.Add(match(Token_Class.End));
-       //     }
+            else if (InputPointer < TokenStream.Count && TokenStream[InputPointer].token_type == Token_Class.End)
+            {
+                elsif.Children.Add(match(Token_Class.End));
+            }
             else
             {
                 Errors.Error_List.Add("Parsing Error: Expected end\r\n");
@@ -289,7 +289,7 @@ namespace JASON_Compiler
             Node els = new Node("Else_Statement");
             els.Children.Add(match(Token_Class.Else));
             els.Children.Add(Statements());
-     //       els.Children.Add(match(Token_Class.End));
+            els.Children.Add(match(Token_Class.End));
 
             return els;
         }
