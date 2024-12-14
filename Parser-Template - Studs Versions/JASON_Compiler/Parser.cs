@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -47,7 +48,7 @@ namespace JASON_Compiler
         Node Functions()
         {
             Node functions = new Node("Functions");
-            while(TokenStream[InputPointer + 1].token_type != Token_Class.Main)
+            while (TokenStream[InputPointer + 1].token_type != Token_Class.Main)
                 functions.Children.Add(Function());
             return functions;
         }
@@ -103,6 +104,7 @@ namespace JASON_Compiler
             else return null;
             return function_name;
         }
+
         Node Parameters()
         {
             Node parameters = new Node("Parameters");
@@ -181,16 +183,16 @@ namespace JASON_Compiler
                 statement.Children.Add(FullIfStatement());
                 return statement;
             }
-/*            else if (TokenStream[InputPointer].token_type == Token_Class.ElseIF)
-            {
-                statement.Children.Add(ElseifStatment());
-                return statement;
-            }
-            else if (TokenStream[InputPointer].token_type == Token_Class.Else)
-            {
-                statement.Children.Add(ElseStatment());
-                return statement;
-            }*/
+            /*            else if (TokenStream[InputPointer].token_type == Token_Class.ElseIF)
+                        {
+                            statement.Children.Add(ElseifStatment());
+                            return statement;
+                        }
+                        else if (TokenStream[InputPointer].token_type == Token_Class.Else)
+                        {
+                            statement.Children.Add(ElseStatment());
+                            return statement;
+                        }*/
             // if the curr token is repeat
             else if (TokenStream[InputPointer].token_type == Token_Class.Repeat)
             {
@@ -202,8 +204,32 @@ namespace JASON_Compiler
                 statement.Children.Add(Return_Statement());
                 return statement;
             }
+            else if (TokenStream[InputPointer].token_type == Token_Class.DivisionOperator && TokenStream[InputPointer + 1].token_type == Token_Class.MultiplyOperator)
+            {
+                statement.Children.Add(Comment_Statement());
+                return statement;
+            }
             return null;
         }
+        Node Comment_Statement()
+        {
+            Node comment = new Node("Comment_Statement");
+                InputPointer += 2;
+                while (!(TokenStream[InputPointer].token_type == Token_Class.MultiplyOperator && TokenStream[InputPointer + 1].token_type == Token_Class.DivisionOperator))
+                {
+
+                    InputPointer++;
+                    if (InputPointer == TokenStream.Count)
+                    {
+                        InputPointer -= 2;
+                        break;
+                    }
+                }
+            MessageBox.Show("comment");
+                InputPointer += 2;
+            return comment;
+        }
+
         Node FunctionCall()
         {
             Node call = new Node("FunctionCall");
