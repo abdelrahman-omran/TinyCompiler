@@ -35,6 +35,55 @@ namespace JASON_Compiler
             root.Children.Add(Program());
             return root;
         }
+        bool FoundToken()
+        {
+
+            if (TokenStream[InputPointer].token_type == Token_Class.Integer ||
+                TokenStream[InputPointer].token_type == Token_Class.Float ||
+                TokenStream[InputPointer].token_type == Token_Class.String)
+            {
+
+                return true;
+            }
+            else if (TokenStream[InputPointer].token_type == Token_Class.Identifier &&
+                TokenStream[InputPointer + 1].token_type == Token_Class.AssignOperator)
+            {
+                return true;
+            }
+            else if (TokenStream[InputPointer].token_type == Token_Class.Write)
+            {
+                return true;
+            }
+            // if the curr token is read
+            else if (TokenStream[InputPointer].token_type == Token_Class.Read)
+            {
+                return true;
+            }
+            // if the curr token is if
+            else if (TokenStream[InputPointer].token_type == Token_Class.If)
+            {
+                return true;
+            }
+ 
+            else if (TokenStream[InputPointer].token_type == Token_Class.Repeat)
+            {
+                return true;
+            }
+            else if (TokenStream[InputPointer].token_type == Token_Class.Return)
+            {
+                return true;
+            }
+            else if (TokenStream[InputPointer].token_type == Token_Class.DivisionOperator && TokenStream[InputPointer + 1].token_type == Token_Class.MultiplyOperator)
+            {
+                return true;
+            }
+            else
+            {
+                //Errors.Error_List.Add("Parsing Error: Expected Statement\r\n");
+                return false;
+            }
+        }
+
         Node Program()
         {
             Node program = new Node("Program");
@@ -64,8 +113,39 @@ namespace JASON_Compiler
             Node mainfunc = new Node("Main");
             mainfunc.Children.Add(Datatype());
             mainfunc.Children.Add(match(Token_Class.Main));
-            mainfunc.Children.Add(match(Token_Class.Lbrace));
-            mainfunc.Children.Add(match(Token_Class.Rbrace));
+            
+            if (TokenStream[InputPointer].token_type != Token_Class.Lbrace)
+            {
+                Errors.Error_List.Add("Parsing Error: Expected Lbrace in main function\r\n");
+                bool nextStatement = FoundToken();
+                while (!nextStatement)
+                {
+                    MessageBox.Show("here");
+
+                    InputPointer++;
+                    nextStatement = FoundToken();
+
+                }
+
+                return null;
+            }
+            else
+                mainfunc.Children.Add(match(Token_Class.Lbrace));
+            if (TokenStream[InputPointer].token_type != Token_Class.Rbrace)
+            {
+                Errors.Error_List.Add("Parsing Error: Expected Rbrace in main function\r\n");
+                bool nextStatement = FoundToken();
+                while (!nextStatement)
+                {
+                    InputPointer++;
+                    nextStatement = FoundToken();
+
+                }
+
+                return null;
+            }
+            else
+                mainfunc.Children.Add(match(Token_Class.Lbrace));
             mainfunc.Children.Add(FunctionBody());
             return mainfunc;
         }
@@ -75,33 +155,65 @@ namespace JASON_Compiler
             Node function_dec = new Node("Function_dec");
             function_dec.Children.Add(Datatype());
             function_dec.Children.Add(Function_name());
-            if (TokenStream[InputPointer].token_type == Token_Class.Lbrace)
-                function_dec.Children.Add(match(Token_Class.Lbrace));
-            else
+            if (TokenStream[InputPointer].token_type != Token_Class.Rbrace)
             {
+                Errors.Error_List.Add("Parsing Error: Expected Rbrace in function declaration\r\n");
+                bool nextStatement = FoundToken();
+                while (!nextStatement)
+                {
+
+                    InputPointer++;
+                    nextStatement = FoundToken();
+
+                }
+
                 return null;
             }
+            else
+                function_dec.Children.Add(match(Token_Class.Rbrace));
+
             if (TokenStream[InputPointer].token_type == Token_Class.Rbrace)
                 function_dec.Children.Add(match(Token_Class.Rbrace));
             else
             {
                 function_dec.Children.Add(Parameters());
-                if (TokenStream[InputPointer].token_type == Token_Class.Rbrace)
-                    function_dec.Children.Add(match(Token_Class.Rbrace));
-                else return null;
+                if (TokenStream[InputPointer].token_type != Token_Class.Lbrace)
+                {
+                    Errors.Error_List.Add("Parsing Error: Expected Rbrace in function declaration \r\n");
+                    bool nextStatement = FoundToken();
+                    while (!nextStatement)
+                    {
+                        InputPointer++;
+                        nextStatement = FoundToken();
+
+                    }
+
+                    return null;
+                }
+                else
+                    function_dec.Children.Add(match(Token_Class.Lbrace));
 
             }
-
-
-
             return function_dec;
         }
         Node Function_name()
         {
             Node function_name = new Node("Function_name");
-            if (TokenStream[InputPointer].token_type == Token_Class.Identifier)
+            if (TokenStream[InputPointer].token_type != Token_Class.Identifier)
+            {
+                Errors.Error_List.Add("Parsing Error: Expected Identifier in function declaration \r\n");
+                bool nextStatement = FoundToken();
+                while (!nextStatement)
+                {
+                    InputPointer++;
+                    nextStatement = FoundToken();
+
+                }
+
+                return null;
+            }
+            else
                 function_name.Children.Add(match(Token_Class.Identifier));
-            else return null;
             return function_name;
         }
 
@@ -161,7 +273,8 @@ namespace JASON_Compiler
                 statement.Children.Add(Declaration_Statement());
                 return statement;
             }
-            else if (TokenStream[InputPointer].token_type == Token_Class.Identifier)
+            else if (TokenStream[InputPointer].token_type == Token_Class.Identifier &&
+                TokenStream[InputPointer+1].token_type == Token_Class.AssignOperator)
             {
                 statement.Children.Add(Assignment_Statement());
                 return statement;
@@ -209,7 +322,12 @@ namespace JASON_Compiler
                 statement.Children.Add(Comment_Statement());
                 return statement;
             }
-            return null;
+            else
+            {
+                //Errors.Error_List.Add("Parsing Error: Expected Statement\r\n");
+                return null;
+            }
+
         }
         Node Comment_Statement()
         {
@@ -253,7 +371,23 @@ namespace JASON_Compiler
             Node read = new Node("Read_Statement");
             read.Children.Add(match(Token_Class.Read));
             read.Children.Add(match(Token_Class.Identifier));
-            read.Children.Add(match(Token_Class.SimiColon));
+            if (TokenStream[InputPointer].token_type != Token_Class.SimiColon)
+            {
+                Errors.Error_List.Add("Parsing Error: Expected SemiColon\r\n");
+                bool nextStatement = FoundToken();
+                while (!nextStatement)
+                {
+                    InputPointer++;
+                    nextStatement = FoundToken();
+
+                }
+
+                return null;
+            }
+            else
+            {
+                read.Children.Add(match(Token_Class.SimiColon));
+            }
             return read;
         }
         Node Write_Statement()
@@ -273,16 +407,70 @@ namespace JASON_Compiler
                 write.Children.Add(Expression());
 
             }
-            write.Children.Add(match(Token_Class.SimiColon));
+            if (TokenStream[InputPointer].token_type != Token_Class.SimiColon)
+            {
+                Errors.Error_List.Add("Parsing Error: Expected SemiColon in Write Statement\r\n");
+                bool nextStatement = FoundToken();
+                while (!nextStatement)
+                {
+                    InputPointer++;
+                    nextStatement = FoundToken();
+
+                }
+
+                return null;
+            }
+            else
+                write.Children.Add(match(Token_Class.SimiColon));
             return write;
         }
         Node Assignment_Statement()
         {
             Node assign = new Node("Assignment_Statement");
+            if (TokenStream[InputPointer].token_type != Token_Class.Identifier)
+            {
+                Errors.Error_List.Add("Parsing Error: Missing Identifier in Assignment statement\r\n");
+                bool nextStatement = FoundToken();
+                while (!nextStatement)
+                {
+                    InputPointer++;
+                    nextStatement = FoundToken();
 
-            assign.Children.Add(match(Token_Class.Identifier));
-            assign.Children.Add(match(Token_Class.AssignOperator));
+                }
+
+                return null;
+            }
+            else
+                assign.Children.Add(match(Token_Class.Identifier));
+            if (TokenStream[InputPointer].token_type != Token_Class.AssignOperator)
+            {
+                Errors.Error_List.Add("Parsing Error: Missing AssignOperator in Assignment statement \r\n");
+                bool nextStatement = FoundToken();
+                while (!nextStatement)
+                {
+                    InputPointer++;
+                    nextStatement = FoundToken();
+
+                }
+
+                return null;
+            }
+            else
+                assign.Children.Add(match(Token_Class.AssignOperator));
             assign.Children.Add(Expression());
+            if (TokenStream[InputPointer].token_type != Token_Class.SimiColon)
+            {
+                Errors.Error_List.Add("Parsing Error: Expected SemiColon in in Assignment statement\r\n");
+                bool nextStatement = FoundToken();
+                while (!nextStatement)
+                {
+                    InputPointer++;
+                    nextStatement = FoundToken();
+
+                }
+
+                return null;
+            }
             assign.Children.Add(match(Token_Class.SimiColon));
             return assign;
         }
@@ -292,24 +480,37 @@ namespace JASON_Compiler
             Node fullifStet = new Node("FullIfStatement");
 
             fullifStet.Children.Add(IfStatement());
-            while (InputPointer < TokenStream.Count && TokenStream[InputPointer].token_type == Token_Class.ElseIF)
-            {
-                fullifStet.Children.Add(ElseifStatment());
-            }
-            if (InputPointer < TokenStream.Count && TokenStream[InputPointer].token_type == Token_Class.Else)
-            {
-                fullifStet.Children.Add(ElseStatment());
-            }
+            fullifStet.Children.Add(ElsePart());
             if(TokenStream[InputPointer].token_type != Token_Class.End)
             {
                 Errors.Error_List.Add("Parsing Error: Expected end\r\n");
-                // InputPointer++;
+                bool nextStatement = FoundToken();
+                while (!nextStatement)
+                {
+                    InputPointer++;
+                    nextStatement = FoundToken();
+
+                }
 
                 return null;
             }
-            fullifStet.Children.Add(match(Token_Class.End));
+            else
+                fullifStet.Children.Add(match(Token_Class.End));
 
             return fullifStet;
+        }
+        Node ElsePart()
+        {
+            Node elsepart = new Node("Else Part");
+            while (InputPointer < TokenStream.Count && TokenStream[InputPointer].token_type == Token_Class.ElseIF)
+            {
+                elsepart.Children.Add(ElseifStatment());
+            }
+            if (InputPointer < TokenStream.Count && TokenStream[InputPointer].token_type == Token_Class.Else)
+            {
+                elsepart.Children.Add(ElseStatment());
+            }
+            return elsepart;
         }
         Node IfStatement()
         {
@@ -343,7 +544,15 @@ namespace JASON_Compiler
             Node rtn = new Node("Return_Statement");
             rtn.Children.Add(match(Token_Class.Return));
             rtn.Children.Add(Expression());
-            rtn.Children.Add(match(Token_Class.SimiColon));
+            if (TokenStream[InputPointer].token_type != Token_Class.SimiColon)
+            {
+                Errors.Error_List.Add("Parsing Error: Expected SemiColon\r\n");
+                InputPointer++;
+
+                return null;
+            }
+            else
+                rtn.Children.Add(match(Token_Class.SimiColon));
             return rtn;
 
         }
@@ -480,13 +689,6 @@ namespace JASON_Compiler
 
 
             }
-
-
-
-
-
-
-
 
 
             return equation;
